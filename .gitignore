@@ -1,0 +1,14 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Data (never commit raw data)
+data/*.csv
+data/*.json
+
+# OS
+.DS_Store
+
+# Logs
+*.log

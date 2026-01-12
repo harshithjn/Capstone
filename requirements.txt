@@ -1,0 +1,17 @@
+# Core system & metrics
+psutil==5.9.8
+
+# Web workload
+flask==3.0.2
+
+# ML dependencies (CPU-only)
+torch==2.2.1
+torchvision==0.17.1
+numpy==1.26.4
+
+# Database client
+psycopg2-binary==2.9.9
+
+# Utilities
+requests==2.31.0
+tqdm==4.66.2
