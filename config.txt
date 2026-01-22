@@ -1,0 +1,31 @@
+WORKLOADS = 6
+CPU_CORES = [2, 4, 8, 16]
+MEMORY_GB = [4, 8, 16, 32, 64]
+REPETITIONS = 6
+BATCHES = 8
+
+
+Schema : 
+run_id
+batch_id
+
+workload_type
+workload_name
+workload_complexity
+
+cpu_cores
+memory_total_gb
+
+cpu_avg_pct
+effective_cpu
+
+memory_avg_gb
+memory_pressure
+
+disk_read_mb
+disk_write_mb
+io_intensity
+disk_type
+disk_speed_class
+
+runtime_sec
