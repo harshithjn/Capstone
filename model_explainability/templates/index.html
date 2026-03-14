@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Runtime Prediction Dashboard</title>
+
+<style>
+
+body{
+background:#0f172a;
+font-family:Arial, Helvetica, sans-serif;
+color:white;
+margin:0;
+padding:0;
+}
+
+h1{
+text-align:center;
+padding:20px;
+}
+
+.container{
+display:flex;
+gap:40px;
+padding:30px;
+}
+
+.left{
+flex:1;
+background:#1e293b;
+padding:25px;
+border-radius:10px;
+}
+
+.right{
+flex:1;
+background:#1e293b;
+padding:25px;
+border-radius:10px;
+display:flex;
+flex-direction:column;
+justify-content:center;
+}
+
+input{
+width:100%;
+padding:10px;
+margin-top:8px;
+margin-bottom:12px;
+background:#0f172a;
+border:1px solid #334155;
+color:white;
+border-radius:6px;
+}
+
+textarea{
+width:100%;
+background:#0f172a;
+border:1px solid #334155;
+color:white;
+border-radius:6px;
+padding:10px;
+}
+
+button{
+width:100%;
+padding:12px;
+background:#2563eb;
+border:none;
+border-radius:6px;
+color:white;
+font-size:16px;
+cursor:pointer;
+margin-top:10px;
+}
+
+button:hover{
+background:#1d4ed8;
+}
+
+.model{
+background:#0f172a;
+border:1px solid #334155;
+padding:15px;
+border-radius:8px;
+margin-top:12px;
+font-size:18px;
+}
+
+.bulkBox{
+margin-bottom:20px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>Runtime Prediction Dashboard</h1>
+
+<div class="container">
+
+<!-- LEFT SIDE INPUTS -->
+
+<div class="left">
+
+<div class="bulkBox">
+
+<h3>Quick Paste Dataset Row</h3>
+
+<textarea id="bulkInput" placeholder="Example: ML,ml_resnet,5,8,16,70,5.6,8,0.5,120,40,160,3"></textarea>
+
+<button type="button" onclick="fillInputs()">Auto Fill Fields</button>
+
+</div>
+
+<form action="/predict" method="post">
+
+<input id="workload_type" name="workload_type" placeholder="workload_type">
+
+<input id="workload_name" name="workload_name" placeholder="workload_name">
+
+<input id="workload_complexity" name="workload_complexity" placeholder="workload_complexity">
+
+<input id="cpu_cores" name="cpu_cores" placeholder="cpu_cores">
+
+<input id="memory_total_gb" name="memory_total_gb" placeholder="memory_total_gb">
+
+<input id="cpu_avg_pct" name="cpu_avg_pct" placeholder="cpu_avg_pct">
+
+<input id="effective_cpu" name="effective_cpu" placeholder="effective_cpu">
+
+<input id="memory_avg_gb" name="memory_avg_gb" placeholder="memory_avg_gb">
+
+<input id="memory_pressure" name="memory_pressure" placeholder="memory_pressure">
+
+<input id="disk_read_mb" name="disk_read_mb" placeholder="disk_read_mb">
+
+<input id="disk_write_mb" name="disk_write_mb" placeholder="disk_write_mb">
+
+<input id="io_intensity" name="io_intensity" placeholder="io_intensity">
+
+<input id="disk_speed_class" name="disk_speed_class" placeholder="disk_speed_class">
+
+<button type="submit">Predict Runtime</button>
+
+</form>
+
+</div>
+
+<!-- RIGHT SIDE OUTPUT -->
+
+<div class="right">
+
+<h2>Model Predictions</h2>
+
+{% if lr %}
+
+<div class="model">Linear Regression: {{lr}} sec</div>
+
+<div class="model">Decision Tree: {{dt}} sec</div>
+
+<div class="model">Random Forest: {{rf}} sec</div>
+
+<div class="model">XGBoost: {{xgb}} sec</div>
+
+{% else %}
+
+<p>Enter system metrics and click Predict Runtime.</p>
+
+{% endif %}
+
+</div>
+
+</div>
+
+<script>
+
+function fillInputs(){
+
+let values = document.getElementById("bulkInput").value.split(",");
+
+let ids = [
+"workload_type",
+"workload_name",
+"workload_complexity",
+"cpu_cores",
+"memory_total_gb",
+"cpu_avg_pct",
+"effective_cpu",
+"memory_avg_gb",
+"memory_pressure",
+"disk_read_mb",
+"disk_write_mb",
+"io_intensity",
+"disk_speed_class"
+];
+
+for(let i=0;i<ids.length;i++){
+
+if(values[i]){
+document.getElementById(ids[i]).value = values[i].trim();
+}
+
+}
+
+}
+
+</script>
+
+</body>
+</html>
