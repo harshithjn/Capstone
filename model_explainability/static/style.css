@@ -1,0 +1,130 @@
+/* Enhanced styling for the explainability dashboard */
+
+.explanation-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.explanation-card {
+    background: #0f172a;
+    border: 1px solid #334155;
+    padding: 20px;
+    border-radius: 8px;
+    transition: border-color 0.3s ease;
+}
+
+.explanation-card:hover {
+    border-color: #60a5fa;
+}
+
+.metric-highlight {
+    color: #10b981;
+    font-weight: bold;
+}
+
+.metric-negative {
+    color: #ef4444;
+    font-weight: bold;
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #334155;
+    border-radius: 50%;
+    border-top-color: #60a5fa;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.tooltip {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 200px;
+    background-color: #1e293b;
+    color: #e2e8f0;
+    text-align: center;
+    border-radius: 6px;
+    padding: 8px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -100px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 12px;
+    border: 1px solid #334155;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
+.feature-bar {
+    display: flex;
+    align-items: center;
+    margin: 8px 0;
+    padding: 8px;
+    background: #1e293b;
+    border-radius: 4px;
+}
+
+.feature-name {
+    flex: 1;
+    font-size: 14px;
+}
+
+.feature-value {
+    margin-left: 10px;
+    font-weight: bold;
+    min-width: 60px;
+    text-align: right;
+}
+
+.progress-bar {
+    flex: 2;
+    height: 8px;
+    background: #334155;
+    border-radius: 4px;
+    margin: 0 10px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #60a5fa, #3b82f6);
+    transition: width 0.5s ease;
+}
+
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .explanation-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .tab-buttons {
+        flex-wrap: wrap;
+    }
+    
+    .tab-button {
+        flex: 1;
+        min-width: 100px;
+    }
+}
