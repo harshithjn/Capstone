@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Runtime Prediction Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://db.onlinewebfonts.com/c/f56809563b15c7c76669dac9ca9d38ac?family=Matter+Regular" rel="stylesheet">
+
+<style>
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #ffffff;
+    font-family: "Matter Regular", Arial, sans-serif;
+    color: #2d3748;
+    line-height: 1.6;
+}
+
+.header {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #000000 100%);
+    color: white;
+    padding: 2rem 0;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+.header h1 {
+    font-size: 2.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.header p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.nav-links a:hover {
+    background-color: rgba(255,255,255,0.1);
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 2rem;
+}
+
+.sidebar {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.5rem;
+    height: fit-content;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.main-content {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.bulk-input {
+    margin-bottom: 1.5rem;
+}
+
+.bulk-input h3 {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+    color: #4a5568;
+}
+
+.bulk-textarea {
+    width: 100%;
+    height: 80px;
+    padding: 0.75rem;
+    border: 1px solid #cbd5e0;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    resize: vertical;
+    font-family: monospace;
+}
+
+.bulk-textarea:focus {
+    outline: none;
+    border-color: #2d2d2d;
+    box-shadow: 0 0 0 3px rgba(45, 45, 45, 0.2);
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #cbd5e0;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #2d2d2d;
+    box-shadow: 0 0 0 3px rgba(45, 45, 45, 0.2);
+}
+
+.btn {
+    width: 100%;
+    padding: 0.875rem;
+    background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+.btn-secondary {
+    background: #718096;
+    margin-bottom: 1rem;
+}
+
+.btn-secondary:hover {
+    background: #4a5568;
+    box-shadow: 0 4px 12px rgba(113, 128, 150, 0.3);
+}
+
+.predictions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.prediction-card {
+    background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.prediction-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.model-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #4a5568;
+    margin-bottom: 0.5rem;
+}
+
+.prediction-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2d2d2d;
+    margin-bottom: 0.25rem;
+}
+
+.prediction-unit {
+    font-size: 0.875rem;
+    color: #718096;
+}
+
+.explanation-section {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.explanation-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.chart-container {
+    position: relative;
+    height: 300px;
+    margin: 1rem 0;
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.tab-container {
+    margin-top: 1rem;
+}
+
+.tab-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.tab-button {
+    padding: 0.5rem 1rem;
+    background: #e2e8f0;
+    color: #4a5568;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.tab-button.active {
+    background: #2d2d2d;
+    color: white;
+}
+
+.tab-button:hover:not(.active) {
+    background: #cbd5e0;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.rule-item {
+    background: white;
+    padding: 0.75rem 1rem;
+    margin: 0.5rem 0;
+    border-radius: 6px;
+    border-left: 4px solid #2d2d2d;
+    font-family: monospace;
+    font-size: 0.875rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.neighbor-item {
+    background: white;
+    padding: 1rem;
+    margin: 0.75rem 0;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border: 1px solid #e2e8f0;
+}
+
+.neighbor-id {
+    font-weight: 600;
+    color: #4a5568;
+}
+
+.neighbor-runtime {
+    font-weight: 600;
+    color: #2d2d2d;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: #718096;
+}
+
+.empty-state h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+    color: #4a5568;
+}
+
+@media (max-width: 768px) {
+    .container {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+    }
+    
+    .predictions-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .tab-buttons {
+        flex-direction: column;
+    }
+    
+    .tab-button {
+        width: 100%;
+    }
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="header">
+    <h1>Runtime Prediction Dashboard</h1>
+    <p>Capstone Team 94</p>
+    <div class="nav-links" style="margin-top: 1rem;">
+        <a href="/" style="color: white; text-decoration: none; margin: 0 1rem; padding: 0.5rem 1rem; border-radius: 6px; transition: background-color 0.2s;">Manual Input Dashboard</a>
+        <a href="/code_analyzer" style="color: white; text-decoration: none; margin: 0 1rem; padding: 0.5rem 1rem; border-radius: 6px; transition: background-color 0.2s;">Code Analyzer</a>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="section-title">Input Configuration</div>
+        
+        <div class="bulk-input">
+            <h3>Quick Data Entry</h3>
+            <textarea id="bulkInput" class="bulk-textarea" placeholder="ML,ml_resnet,5,8,16,70,5.6,8,0.5,120,40,160,3"></textarea>
+            <button type="button" class="btn btn-secondary" onclick="fillInputs()">Auto Fill Fields</button>
+        </div>
+
+        <form action="/predict" method="post">
+            <div class="form-group">
+                <input id="workload_type" name="workload_type" class="form-input" placeholder="Workload Type">
+            </div>
+            
+            <div class="form-group">
+                <input id="workload_name" name="workload_name" class="form-input" placeholder="Workload Name">
+            </div>
+            
+            <div class="form-group">
+                <input id="workload_complexity" name="workload_complexity" class="form-input" placeholder="Workload Complexity">
+            </div>
+            
+            <div class="form-group">
+                <input id="cpu_cores" name="cpu_cores" class="form-input" placeholder="CPU Cores">
+            </div>
+            
+            <div class="form-group">
+                <input id="memory_total_gb" name="memory_total_gb" class="form-input" placeholder="Memory Total (GB)">
+            </div>
+            
+            <div class="form-group">
+                <input id="cpu_avg_pct" name="cpu_avg_pct" class="form-input" placeholder="CPU Average (%)">
+            </div>
+            
+            <div class="form-group">
+                <input id="effective_cpu" name="effective_cpu" class="form-input" placeholder="Effective CPU">
+            </div>
+            
+            <div class="form-group">
+                <input id="memory_avg_gb" name="memory_avg_gb" class="form-input" placeholder="Memory Average (GB)">
+            </div>
+            
+            <div class="form-group">
+                <input id="memory_pressure" name="memory_pressure" class="form-input" placeholder="Memory Pressure">
+            </div>
+            
+            <div class="form-group">
+                <input id="disk_read_mb" name="disk_read_mb" class="form-input" placeholder="Disk Read (MB)">
+            </div>
+            
+            <div class="form-group">
+                <input id="disk_write_mb" name="disk_write_mb" class="form-input" placeholder="Disk Write (MB)">
+            </div>
+            
+            <div class="form-group">
+                <input id="io_intensity" name="io_intensity" class="form-input" placeholder="I/O Intensity">
+            </div>
+            
+            <div class="form-group">
+                <input id="disk_speed_class" name="disk_speed_class" class="form-input" placeholder="Disk Speed Class">
+            </div>
+
+            <button type="submit" class="btn">Predict Runtime</button>
+        </form>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        {% if lr %}
+        
+        <div class="section-title">Model Predictions</div>
+        
+        <div class="predictions-grid">
+            <div class="prediction-card">
+                <div class="model-name">Linear Regression</div>
+                <div class="prediction-value">{{lr}}</div>
+                <div class="prediction-unit">seconds</div>
+            </div>
+            
+            <div class="prediction-card">
+                <div class="model-name">Decision Tree</div>
+                <div class="prediction-value">{{dt}}</div>
+                <div class="prediction-unit">seconds</div>
+            </div>
+            
+            <div class="prediction-card">
+                <div class="model-name">Random Forest</div>
+                <div class="prediction-value">{{rf}}</div>
+                <div class="prediction-unit">seconds</div>
+            </div>
+            
+            <div class="prediction-card">
+                <div class="model-name">XGBoost</div>
+                <div class="prediction-value">{{xgb}}</div>
+                <div class="prediction-unit">seconds</div>
+            </div>
+        </div>
+
+        <!-- FEATURE CONTRIBUTION -->
+        <div class="explanation-section">
+            <div class="explanation-title">Feature Contribution Analysis</div>
+            <div class="tab-container">
+                <div class="tab-buttons">
+                    <button class="tab-button active" onclick="showTab('shap-lr')">Linear Regression</button>
+                    <button class="tab-button" onclick="showTab('shap-dt')">Decision Tree</button>
+                    <button class="tab-button" onclick="showTab('shap-rf')">Random Forest</button>
+                    <button class="tab-button" onclick="showTab('shap-xgb')">XGBoost</button>
+                </div>
+
+                <div id="shap-lr" class="tab-content active">
+                    <div class="chart-container">
+                        <canvas id="shapChartLR"></canvas>
+                    </div>
+                </div>
+
+                <div id="shap-dt" class="tab-content">
+                    <div class="chart-container">
+                        <canvas id="shapChartDT"></canvas>
+                    </div>
+                </div>
+
+                <div id="shap-rf" class="tab-content">
+                    <div class="chart-container">
+                        <canvas id="shapChartRF"></canvas>
+                    </div>
+                </div>
+
+                <div id="shap-xgb" class="tab-content">
+                    <div class="chart-container">
+                        <canvas id="shapChartXGB"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FEATURE IMPORTANCE -->
+        <div class="explanation-section">
+            <div class="explanation-title">Feature Importance</div>
+            <div class="tab-container">
+                <div class="tab-buttons">
+                    <button class="tab-button active" onclick="showTab('importance-dt')">Decision Tree</button>
+                    <button class="tab-button" onclick="showTab('importance-rf')">Random Forest</button>
+                    <button class="tab-button" onclick="showTab('importance-xgb')">XGBoost</button>
+                </div>
+
+                <div id="importance-dt" class="tab-content active">
+                    <div class="chart-container">
+                        <canvas id="importanceChartDT"></canvas>
+                    </div>
+                </div>
+
+                <div id="importance-rf" class="tab-content">
+                    <div class="chart-container">
+                        <canvas id="importanceChartRF"></canvas>
+                    </div>
+                </div>
+
+                <div id="importance-xgb" class="tab-content">
+                    <div class="chart-container">
+                        <canvas id="importanceChartXGB"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DECISION RULES -->
+        <div class="explanation-section">
+            <div class="explanation-title">Decision Tree Rules</div>
+            {% if explanations.decision_path %}
+                <p style="margin-bottom: 1rem; color: #4a5568;"><strong>Prediction derived from rule path:</strong></p>
+                {% for rule in explanations.decision_path %}
+                <div class="rule-item">IF {{ rule }}</div>
+                {% endfor %}
+                <div class="rule-item" style="border-left-color: #48bb78;">THEN runtime ≈ {{ dt }} seconds</div>
+            {% else %}
+                <p style="color: #718096;">Decision path analysis not available</p>
+            {% endif %}
+        </div>
+
+        <!-- SIMILAR RUNS -->
+        <div class="explanation-section">
+            <div class="explanation-title">Similar Historical Runs</div>
+            {% if explanations.nearest_neighbors %}
+                <p style="margin-bottom: 1rem; color: #4a5568;"><strong>Closest historical runs:</strong></p>
+                {% for neighbor in explanations.nearest_neighbors %}
+                <div class="neighbor-item">
+                    <span class="neighbor-id">Run {{ neighbor.run_id }}</span>
+                    <span class="neighbor-runtime">{{ "%.2f"|format(neighbor.runtime) }} sec</span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p style="color: #718096;">Historical comparison not available</p>
+            {% endif %}
+        </div>
+
+        {% else %}
+
+        <div class="empty-state">
+            <h3>Welcome to Runtime Prediction Dashboard</h3>
+            <p>Enter system metrics in the sidebar and click "Predict Runtime" to see AI-powered predictions and detailed explanations.</p>
+        </div>
+
+        {% endif %}
+    </div>
+</div>
+
+</body>
+
+<script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+
+</html>

@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Code Runtime Analyzer</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://db.onlinewebfonts.com/c/f56809563b15c7c76669dac9ca9d38ac?family=Matter+Regular" rel="stylesheet">
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: #ffffff;
+    font-family: "Matter Regular", Arial, sans-serif;
+    color: #2d3748;
+    line-height: 1.6;
+}
+
+.header {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #000000 100%);
+    color: white;
+    padding: 2rem 0;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+.header h1 {
+    font-size: 2.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.header p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.nav-links {
+    margin-top: 1rem;
+}
+
+.nav-link {
+    color: white;
+    text-decoration: none;
+    margin: 0 1rem;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+}
+
+.nav-link:hover {
+    background-color: rgba(255,255,255,0.1);
+}
+
+.container {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.code-input-section {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 2rem;
+    height: fit-content;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.results-section {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.code-textarea {
+    width: 100%;
+    height: 300px;
+    padding: 1rem;
+    border: 1px solid #cbd5e0;
+    border-radius: 8px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.875rem;
+    resize: vertical;
+    background: #ffffff;
+    line-height: 1.5;
+}
+
+.code-textarea:focus {
+    outline: none;
+    border-color: #2d2d2d;
+    box-shadow: 0 0 0 3px rgba(45, 45, 45, 0.2);
+}
+
+.production-specs {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.production-specs h4 {
+    margin-bottom: 0.75rem;
+    color: #4a5568;
+}
+
+.spec-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+.spec-input {
+    padding: 0.5rem;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    font-size: 0.875rem;
+}
+
+.spec-input:focus {
+    outline: none;
+    border-color: #2d2d2d;
+    box-shadow: 0 0 0 2px rgba(45, 45, 45, 0.2);
+}
+
+.execute-btn {
+    width: 100%;
+    padding: 1rem;
+    background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin-top: 1rem;
+}
+
+.execute-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+.execute-btn:disabled {
+    background: #cbd5e0;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.loading {
+    display: none;
+    text-align: center;
+    padding: 2rem;
+    color: #718096;
+}
+
+.spinner {
+    border: 3px solid #e2e8f0;
+    border-top: 3px solid #2d2d2d;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.execution-results {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.metrics-comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.environment-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+.environment-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.predictions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.prediction-card {
+    background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+}
+
+.model-name {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #4a5568;
+    margin-bottom: 0.25rem;
+}
+
+.prediction-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #2d2d2d;
+    margin-bottom: 0.25rem;
+}
+
+.prediction-unit {
+    font-size: 0.7rem;
+    color: #718096;
+}
+
+.system-specs {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.specs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.spec-item {
+    background: white;
+    padding: 0.75rem;
+    border-radius: 6px;
+    text-align: center;
+    border-left: 4px solid #2d2d2d;
+}
+
+.spec-label {
+    font-size: 0.75rem;
+    color: #4a5568;
+    margin-bottom: 0.25rem;
+}
+
+.spec-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #2d2d2d;
+}
+
+.execution-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.metric-item {
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: center;
+    border-left: 4px solid #48bb78;
+}
+
+.metric-label {
+    font-size: 0.75rem;
+    color: #4a5568;
+    margin-bottom: 0.25rem;
+}
+
+.metric-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2d2d2d;
+}
+
+.error-message {
+    background: #fed7d7;
+    color: #c53030;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    border-left: 4px solid #e53e3e;
+}
+
+.success-message {
+    background: #c6f6d5;
+    color: #2f855a;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    border-left: 4px solid #48bb78;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: #718096;
+}
+
+.empty-state h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+    color: #4a5568;
+}
+
+.example-btn {
+    background: #718096;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    margin: 0.25rem;
+    transition: background-color 0.2s;
+}
+
+.example-btn:hover {
+    background: #4a5568;
+}
+
+.toggle-production {
+    background: #4299e1;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+    transition: background-color 0.2s;
+}
+
+.toggle-production:hover {
+    background: #3182ce;
+}
+
+@media (max-width: 768px) {
+    .container {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+    }
+    
+    .metrics-comparison {
+        grid-template-columns: 1fr;
+    }
+    
+    .predictions-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .spec-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+</head>
+
+<body>
+<div class="header">
+    <h1>Code Runtime Analyzer</h1>
+    <p>Execute your code and get real performance metrics + production predictions</p>
+    <div class="nav-links">
+        <a href="/" class="nav-link">Manual Input Dashboard</a>
+        <a href="/code_analyzer" class="nav-link">Code Analyzer</a>
+    </div>
+</div>
+
+<div class="container">
+    <!-- CODE INPUT SECTION -->
+    <div class="code-input-section">
+        <div class="section-title">Code Execution & Analysis</div>
+        
+        <div style="margin-bottom: 1rem;">
+            <p style="color: #4a5568; margin-bottom: 0.5rem;">Paste your Python code below (it will be executed safely):</p>
+            <div style="margin-bottom: 1rem;">
+                <button class="example-btn" onclick="loadExample('simple')">~5 Seconds</button>
+                <button class="example-btn" onclick="loadExample('complex')">~15 Seconds</button>
+                <button class="example-btn" onclick="loadExample('ml')">~8 Seconds</button>
+            </div>
+        </div>
+        
+        <textarea id="codeInput" class="code-textarea" placeholder="# Your Python code will be executed to measure real performance
+def fibonacci(n):
+    if n <= 1:
+        return n
+    return fibonacci(n-1) + fibonacci(n-2)
+
+# Calculate fibonacci for numbers 1 to 10
+for i in range(1, 11):
+    result = fibonacci(i)
+    print(f'Fibonacci({i}) = {result}')"></textarea>
+        
+        <button class="toggle-production" onclick="toggleProductionSpecs()">
+            <span id="toggleText">+ Add Production Server Specs</span>
+        </button>
+        
+        <div style="margin: 1rem 0;">
+            <label style="color: #4a5568; font-size: 0.875rem;">Execution Timeout:</label>
+            <select id="timeoutSelect" style="margin-left: 0.5rem; padding: 0.25rem; border: 1px solid #cbd5e0; border-radius: 4px;">
+                <option value="30">30 seconds</option>
+                <option value="60" selected>60 seconds</option>
+                <option value="120">2 minutes</option>
+                <option value="300">5 minutes</option>
+            </select>
+        </div>
+        
+        <div id="productionSpecs" class="production-specs" style="display: none;">
+            <h4>Production Server Specifications</h4>
+            <div class="spec-grid">
+                <input type="number" id="prodCpuCores" class="spec-input" placeholder="CPU Cores" min="1" max="128" value="8">
+                <input type="number" id="prodMemoryGb" class="spec-input" placeholder="Memory (GB)" min="1" max="1024" value="32">
+                <input type="number" id="prodCpuFreq" class="spec-input" placeholder="CPU Freq (GHz)" min="0.5" max="5" step="0.1" value="3.2">
+                <input type="number" id="prodDiskSpeed" class="spec-input" placeholder="Disk Speed (1-5)" min="1" max="5" value="4">
+            </div>
+        </div>
+        
+        <button id="executeBtn" class="execute-btn" onclick="executeAndAnalyze()">
+            Execute Code & Analyze Performance
+        </button>
+        
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Executing your code and measuring performance...</p>
+        </div>
+    </div>
+
+    <!-- RESULTS SECTION -->
+    <div class="results-section">
+        <div id="errorMessage" class="error-message" style="display: none;"></div>
+        <div id="successMessage" class="success-message" style="display: none;"></div>
+        
+        <div id="results" style="display: none;">
+            <!-- System Specs -->
+            <div class="system-specs">
+                <div class="section-title" style="margin-bottom: 1rem;">Current System Specifications</div>
+                <div class="specs-grid" id="systemSpecsGrid">
+                    <!-- System specs will be populated here -->
+                </div>
+            </div>
+            
+            <!-- Execution Results -->
+            <div class="execution-results">
+                <div class="section-title" style="margin-bottom: 1rem;">Actual Execution Metrics</div>
+                <div class="execution-metrics" id="executionMetrics">
+                    <!-- Execution metrics will be populated here -->
+                </div>
+            </div>
+            
+            <!-- Performance Comparison -->
+            <div id="performanceComparison">
+                <div class="section-title">Performance Predictions</div>
+                <div class="metrics-comparison" id="metricsComparison">
+                    <!-- Performance comparison will be populated here -->
+                </div>
+            </div>
+        </div>
+        
+        <div id="emptyState" class="empty-state">
+            <h3>Ready to Execute & Analyze</h3>
+            <p>Paste your Python code above and click "Execute Code" to see real performance metrics and production predictions.</p>
+            <br>
+            <p style="font-size: 0.9rem; color: #718096;">Your code will be executed safely in an isolated environment to measure actual runtime, memory usage, and resource consumption.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+const examples = {
+    simple: `import time
+
+def heavy_task(n):
+    total = 0
+    for i in range(n):
+        total += (i ** 2) % 1234567  # real computation
+    return total
+
+# Step 1: find a baseline
+n = 10_000
+start = time.time()
+heavy_task(n)
+elapsed = time.time() - start
+
+# Step 2: scale n to target ~5 seconds (conservative)
+target_time = 5
+scale = target_time / elapsed
+n = int(n * scale)
+print(f"Adjusted workload: {n}")
+
+# Step 3: run actual computation
+start = time.time()
+result = heavy_task(n)
+end = time.time()
+
+print(f"Result: {result}")
+print(f"Time taken: {end - start:.2f} seconds")`,
+
+    complex: `import time
+
+def heavy_task(n):
+    total = 0
+    for i in range(n):
+        total += (i ** 2) % 1234567
+    return total
+
+# Step 1: baseline run
+n = 10_000
+start = time.time()
+heavy_task(n)
+elapsed = time.time() - start
+
+# Step 2: scale to ~15 seconds (conservative)
+target_time = 15
+scale = target_time / elapsed
+n = int(n * scale)
+print(f"Adjusted workload: {n}")
+
+# Step 3: actual run
+start = time.time()
+result = heavy_task(n)
+end = time.time()
+
+print(f"Result: {result}")
+print(f"Time taken: {end - start:.2f} seconds")`,
+
+    ml: `import time
+import random
+
+def matrix_multiply(size):
+    # Create random matrices
+    A = [[random.random() for _ in range(size)] for _ in range(size)]
+    B = [[random.random() for _ in range(size)] for _ in range(size)]
+    
+    # Matrix multiplication
+    C = [[0 for _ in range(size)] for _ in range(size)]
+    for i in range(size):
+        for j in range(size):
+            for k in range(size):
+                C[i][j] += A[i][k] * B[k][j]
+    
+    return C
+
+# Step 1: baseline with small matrix
+size = 30  # Smaller starting size
+start = time.time()
+matrix_multiply(size)
+elapsed = time.time() - start
+
+# Step 2: scale to target ~8 seconds (conservative)
+target_time = 8
+scale = (target_time / elapsed) ** 0.33  # Cube root because complexity is O(n^3)
+size = int(size * scale)
+print(f"Adjusted matrix size: {size}x{size}")
+
+# Step 3: actual computation
+start = time.time()
+result = matrix_multiply(size)
+end = time.time()
+
+print(f"Matrix multiplication completed")
+print(f"Result matrix size: {len(result)}x{len(result[0])}")
+print(f"Time taken: {end - start:.2f} seconds")`
+};
+
+let productionSpecsVisible = false;
+
+function loadExample(type) {
+    document.getElementById('codeInput').value = examples[type];
+}
+
+function toggleProductionSpecs() {
+    const specsDiv = document.getElementById('productionSpecs');
+    const toggleText = document.getElementById('toggleText');
+    
+    productionSpecsVisible = !productionSpecsVisible;
+    
+    if (productionSpecsVisible) {
+        specsDiv.style.display = 'block';
+        toggleText.textContent = '- Remove Production Server Specs';
+    } else {
+        specsDiv.style.display = 'none';
+        toggleText.textContent = '+ Add Production Server Specs';
+    }
+}
+
+async function executeAndAnalyze() {
+    const code = document.getElementById('codeInput').value.trim();
+    const executeBtn = document.getElementById('executeBtn');
+    const loading = document.getElementById('loading');
+    const results = document.getElementById('results');
+    const emptyState = document.getElementById('emptyState');
+    const errorMessage = document.getElementById('errorMessage');
+    const successMessage = document.getElementById('successMessage');
+    
+    if (!code) {
+        showError('Please enter some code to execute and analyze');
+        return;
+    }
+    
+    // Show loading state
+    executeBtn.disabled = true;
+    loading.style.display = 'block';
+    results.style.display = 'none';
+    emptyState.style.display = 'none';
+    errorMessage.style.display = 'none';
+    successMessage.style.display = 'none';
+    
+    try {
+        // Prepare request data
+        const requestData = { 
+            code: code,
+            timeout: parseInt(document.getElementById('timeoutSelect').value) || 60
+        };
+        
+        // Add production specs if provided
+        if (productionSpecsVisible) {
+            const prodSpecs = {
+                cpu_cores: parseFloat(document.getElementById('prodCpuCores').value) || 8,
+                memory_total_gb: parseFloat(document.getElementById('prodMemoryGb').value) || 32,
+                cpu_freq_ghz: parseFloat(document.getElementById('prodCpuFreq').value) || 3.2,
+                disk_speed_class: parseFloat(document.getElementById('prodDiskSpeed').value) || 4
+            };
+            requestData.production_specs = prodSpecs;
+        }
+        
+        const response = await fetch('/execute_and_analyze', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestData)
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            displayExecutionResults(data);
+            showSuccess('Code executed successfully and performance analyzed!');
+        } else {
+            showError(data.error || 'Execution failed');
+        }
+    } catch (error) {
+        showError('Network error: ' + error.message);
+    } finally {
+        executeBtn.disabled = false;
+        loading.style.display = 'none';
+    }
+}
+
+function displayExecutionResults(data) {
+    const results = document.getElementById('results');
+    const emptyState = document.getElementById('emptyState');
+    
+    // Show results
+    results.style.display = 'block';
+    emptyState.style.display = 'none';
+    
+    // Display system specs
+    displaySystemSpecs(data.system_specs);
+    
+    // Display execution metrics
+    displayExecutionMetrics(data.execution_metrics);
+    
+    // Display performance comparison
+    displayPerformanceComparison(data.current_environment, data.production_environment);
+}
+
+function displaySystemSpecs(specs) {
+    const grid = document.getElementById('systemSpecsGrid');
+    grid.innerHTML = '';
+    
+    const specLabels = {
+        'cpu_cores': 'CPU Cores',
+        'cpu_cores_logical': 'Logical Cores',
+        'memory_total_gb': 'Memory (GB)',
+        'cpu_freq_ghz': 'CPU Freq (GHz)',
+        'platform': 'Platform',
+        'python_version': 'Python Version'
+    };
+    
+    Object.entries(specs).forEach(([key, value]) => {
+        const item = document.createElement('div');
+        item.className = 'spec-item';
+        item.innerHTML = `
+            <div class="spec-label">${specLabels[key] || key}</div>
+            <div class="spec-value">${value}</div>
+        `;
+        grid.appendChild(item);
+    });
+}
+
+function displayExecutionMetrics(metrics) {
+    const grid = document.getElementById('executionMetrics');
+    grid.innerHTML = '';
+    
+    const metricLabels = {
+        'runtime_sec': 'Runtime (sec)',
+        'memory_peak_mb': 'Peak Memory (MB)',
+        'memory_used_mb': 'Memory Used (MB)',
+        'cpu_usage_pct': 'CPU Usage (%)'
+    };
+    
+    Object.entries(metrics).forEach(([key, value]) => {
+        if (key === 'execution_successful' || key === 'error_message') return;
+        
+        const item = document.createElement('div');
+        item.className = 'metric-item';
+        
+        let displayValue = value;
+        if (typeof value === 'number') {
+            displayValue = value.toFixed(4);
+        }
+        
+        item.innerHTML = `
+            <div class="metric-label">${metricLabels[key] || key}</div>
+            <div class="metric-value">${displayValue}</div>
+        `;
+        grid.appendChild(item);
+    });
+}
+
+function displayPerformanceComparison(currentEnv, productionEnv) {
+    const grid = document.getElementById('metricsComparison');
+    grid.innerHTML = '';
+    
+    // Current environment card
+    const currentCard = document.createElement('div');
+    currentCard.className = 'environment-card';
+    currentCard.innerHTML = `
+        <div class="environment-title">Current Environment</div>
+        <div class="predictions-grid">
+            ${createPredictionCards(currentEnv.predictions)}
+        </div>
+    `;
+    grid.appendChild(currentCard);
+    
+    // Production environment card (if available)
+    if (productionEnv && productionEnv.predictions) {
+        const productionCard = document.createElement('div');
+        productionCard.className = 'environment-card';
+        productionCard.innerHTML = `
+            <div class="environment-title">Production Environment</div>
+            <div class="predictions-grid">
+                ${createPredictionCards(productionEnv.predictions)}
+            </div>
+        `;
+        grid.appendChild(productionCard);
+    }
+}
+
+function createPredictionCards(predictions) {
+    const models = [
+        { key: 'linear_regression', name: 'Linear Reg.' },
+        { key: 'decision_tree', name: 'Decision Tree' },
+        { key: 'random_forest', name: 'Random Forest' },
+        { key: 'xgboost', name: 'XGBoost' }
+    ];
+    
+    return models.map(model => `
+        <div class="prediction-card">
+            <div class="model-name">${model.name}</div>
+            <div class="prediction-value">${predictions[model.key]}</div>
+            <div class="prediction-unit">seconds</div>
+        </div>
+    `).join('');
+}
+
+function showError(message) {
+    const errorMessage = document.getElementById('errorMessage');
+    const results = document.getElementById('results');
+    const emptyState = document.getElementById('emptyState');
+    const successMessage = document.getElementById('successMessage');
+    
+    errorMessage.textContent = message;
+    errorMessage.style.display = 'block';
+    successMessage.style.display = 'none';
+    results.style.display = 'none';
+    emptyState.style.display = 'none';
+}
+
+function showSuccess(message) {
+    const successMessage = document.getElementById('successMessage');
+    const errorMessage = document.getElementById('errorMessage');
+    
+    successMessage.textContent = message;
+    successMessage.style.display = 'block';
+    errorMessage.style.display = 'none';
+}
+
+// Allow Ctrl+Enter to execute code
+document.getElementById('codeInput').addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.key === 'Enter') {
+        executeAndAnalyze();
+    }
+});
+</script>
+
+</body>
+</html>
