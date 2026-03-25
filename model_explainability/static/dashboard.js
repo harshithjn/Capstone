@@ -237,3 +237,48 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 2000);
 });
+
+// SLA Threshold functions
+function applySLAThreshold() {
+    const threshold = parseFloat(document.getElementById('slaThresholdInput').value);
+    const resultsDiv = document.getElementById('slaResults');
+
+    if (isNaN(threshold) || threshold < 0) {
+        resultsDiv.innerHTML = '<p style="color: #e53e3e;">Please enter a valid positive threshold value.</p>';
+        return;
+    }
+
+    const predictions = window.modelPredictions;
+    if (!predictions) {
+        resultsDiv.innerHTML = '<p style="color: #718096;">No predictions available. Run a prediction first.</p>';
+        return;
+    }
+
+    let html = `<p style="margin-bottom: 1rem; color: #4a5568;">Results against SLA threshold of <strong>${threshold} seconds</strong>:</p>`;
+    html += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">';
+
+    for (const [model, value] of Object.entries(predictions)) {
+        const breaches = value > threshold;
+        const diff = (value - threshold).toFixed(2);
+        const color = breaches ? '#e53e3e' : '#38a169';
+        const bg = breaches ? '#fff5f5' : '#f0fff4';
+        const border = breaches ? '#feb2b2' : '#9ae6b4';
+        const label = breaches ? `+${diff}s over SLA` : `${Math.abs(diff)}s under SLA`;
+        const icon = breaches ? '✗' : '✓';
+
+        html += `
+        <div style="background: ${bg}; border: 1px solid ${border}; border-radius: 10px; padding: 1rem; text-align: center;">
+            <div style="font-weight: 600; color: #4a5568; margin-bottom: 0.5rem;">${model}</div>
+            <div style="font-size: 1.5rem; font-weight: 700; color: ${color};">${icon} ${value}s</div>
+            <div style="font-size: 0.8rem; color: ${color}; margin-top: 0.25rem;">${label}</div>
+        </div>`;
+    }
+
+    html += '</div>';
+    resultsDiv.innerHTML = html;
+}
+
+function clearSLAThreshold() {
+    document.getElementById('slaThresholdInput').value = '';
+    document.getElementById('slaResults').innerHTML = '';
+}

@@ -536,6 +536,17 @@ body {
             {% endif %}
         </div>
 
+        <!-- SLA THRESHOLD -->
+        <div class="explanation-section">
+            <div class="explanation-title">SLA Threshold</div>
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                <input type="number" id="slaThresholdInput" class="form-input" placeholder="Enter SLA threshold (seconds)" min="0" step="0.1" style="max-width: 280px;">
+                <button class="btn" onclick="applySLAThreshold()" style="width: auto; padding: 0.75rem 1.5rem;">Apply</button>
+                <button class="btn btn-secondary" onclick="clearSLAThreshold()" style="width: auto; padding: 0.75rem 1.5rem; margin-bottom: 0;">Clear</button>
+            </div>
+            <div id="slaResults"></div>
+        </div>
+
         {% else %}
 
         <div class="empty-state">
@@ -549,6 +560,16 @@ body {
 
 </body>
 
+{% if lr %}
+<script>
+    window.modelPredictions = {
+        "Linear Regression": {{ lr }},
+        "Decision Tree": {{ dt }},
+        "Random Forest": {{ rf }},
+        "XGBoost": {{ xgb }}
+    };
+</script>
+{% endif %}
 <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
 
 </html>

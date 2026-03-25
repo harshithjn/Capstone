@@ -434,9 +434,14 @@ for i in range(1, 11):
     result = fibonacci(i)
     print(f'Fibonacci({i}) = {result}')"></textarea>
         
-        <button class="toggle-production" onclick="toggleProductionSpecs()">
-            <span id="toggleText">+ Add Production Server Specs</span>
-        </button>
+        <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+            <button class="toggle-production" onclick="toggleProductionSpecs()" style="margin-bottom: 0;">
+                <span id="toggleText">+ Add Production Server Specs</span>
+            </button>
+            <button class="toggle-production" onclick="toggleSlaSpecs()" style="margin-bottom: 0; background: #ed8936;">
+                <span id="toggleSlaText">+ Add SLA Limits</span>
+            </button>
+        </div>
         
         <div style="margin: 1rem 0;">
             <label style="color: #4a5568; font-size: 0.875rem;">Execution Timeout:</label>
@@ -456,6 +461,17 @@ for i in range(1, 11):
                 <input type="number" id="prodCpuFreq" class="spec-input" placeholder="CPU Freq (GHz)" min="0.5" max="5" step="0.1" value="3.2">
                 <input type="number" id="prodDiskSpeed" class="spec-input" placeholder="Disk Speed (1-5)" min="1" max="5" value="4">
             </div>
+        </div>
+        
+        <div id="slaSpecs" class="production-specs" style="display: none; background: #fffaf0; border-color: #fbd38d;">
+            <h4 style="color: #c05621;">Service Level Agreement (SLA) Limits</h4>
+            <div class="spec-grid">
+                <input type="number" id="slaRuntimeSec" class="spec-input" placeholder="Max Runtime (sec)" min="0" step="0.01">
+                <input type="number" id="slaMemoryUsedMb" class="spec-input" placeholder="Max Memory Used (MB)" min="0" step="1">
+                <input type="number" id="slaMemoryPeakMb" class="spec-input" placeholder="Max Peak Memory (MB)" min="0" step="1">
+                <input type="number" id="slaCpuUsagePct" class="spec-input" placeholder="Max CPU Usage (%)" min="0" max="100" step="1">
+            </div>
+            <p style="font-size: 0.75rem; color: #dd6b20; margin-top: 0.5rem;">Actual execution metrics exceeding these limits will be highlighted in red.</p>
         </div>
         
         <button id="executeBtn" class="execute-btn" onclick="executeAndAnalyze()">
@@ -606,6 +622,7 @@ print(f"Time taken: {end - start:.2f} seconds")`
 };
 
 let productionSpecsVisible = false;
+let slaSpecsVisible = false;
 
 function loadExample(type) {
     document.getElementById('codeInput').value = examples[type];
@@ -623,6 +640,21 @@ function toggleProductionSpecs() {
     } else {
         specsDiv.style.display = 'none';
         toggleText.textContent = '+ Add Production Server Specs';
+    }
+}
+
+function toggleSlaSpecs() {
+    const specsDiv = document.getElementById('slaSpecs');
+    const toggleText = document.getElementById('toggleSlaText');
+    
+    slaSpecsVisible = !slaSpecsVisible;
+    
+    if (slaSpecsVisible) {
+        specsDiv.style.display = 'block';
+        toggleText.textContent = '- Remove SLA Limits';
+    } else {
+        specsDiv.style.display = 'none';
+        toggleText.textContent = '+ Add SLA Limits';
     }
 }
 
@@ -743,6 +775,13 @@ function displayExecutionMetrics(metrics) {
         'cpu_usage_pct': 'CPU Usage (%)'
     };
     
+    const slaLimits = {
+        'runtime_sec': parseFloat(document.getElementById('slaRuntimeSec')?.value),
+        'memory_peak_mb': parseFloat(document.getElementById('slaMemoryPeakMb')?.value),
+        'memory_used_mb': parseFloat(document.getElementById('slaMemoryUsedMb')?.value),
+        'cpu_usage_pct': parseFloat(document.getElementById('slaCpuUsagePct')?.value)
+    };
+    
     Object.entries(metrics).forEach(([key, value]) => {
         if (key === 'execution_successful' || key === 'error_message') return;
         
@@ -754,9 +793,26 @@ function displayExecutionMetrics(metrics) {
             displayValue = value.toFixed(4);
         }
         
+        let backgroundColor = 'white';
+        let borderColor = '#48bb78';
+        let textColor = '#2d2d2d';
+        let statusIcon = '';
+        
+        if (slaSpecsVisible && !isNaN(slaLimits[key]) && value > slaLimits[key]) {
+            backgroundColor = '#fff5f5';
+            borderColor = '#e53e3e';
+            textColor = '#c53030';
+            statusIcon = ' <div style="color: #e53e3e; font-size: 0.75rem; margin-top: 0.25rem;">(Exceeds SLA)</div>';
+            item.style.border = '1px solid #fc8181';
+        }
+        
+        item.style.backgroundColor = backgroundColor;
+        item.style.borderLeft = `4px solid ${borderColor}`;
+        
         item.innerHTML = `
             <div class="metric-label">${metricLabels[key] || key}</div>
-            <div class="metric-value">${displayValue}</div>
+            <div class="metric-value" style="color: ${textColor}">${displayValue}</div>
+            ${statusIcon}
         `;
         grid.appendChild(item);
     });
