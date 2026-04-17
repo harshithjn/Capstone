@@ -447,6 +447,11 @@ for i in range(1, 11):
                 <option value="300">5 minutes</option>
             </select>
         </div>
+
+        <div style="margin: 1rem 0;">
+            <label style="color: #4a5568; font-size: 0.875rem;">SLA Target (seconds):</label>
+            <input type="number" id="slaTargetInput" value="15.0" step="0.1" style="margin-left: 0.5rem; padding: 0.25rem; border: 1px solid #cbd5e0; border-radius: 4px; width: 80px;">
+        </div>
         
         <div id="productionSpecs" class="production-specs" style="display: none;">
             <h4>Production Server Specifications</h4>
@@ -496,6 +501,10 @@ for i in range(1, 11):
                 <div class="metrics-comparison" id="metricsComparison">
                     <!-- Performance comparison will be populated here -->
                 </div>
+            </div>
+            
+            <div style="margin-top: 2rem; margin-bottom: 2rem; text-align: center;">
+                <button class="execute-btn" style="background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%); width: auto; padding: 1rem 3rem;" onclick="showSlaModal()">Run SLA Check & CI/CD Pipeline Validaton</button>
             </div>
         </div>
         
@@ -763,6 +772,8 @@ function displayExecutionMetrics(metrics) {
 }
 
 function displayPerformanceComparison(currentEnv, productionEnv) {
+    window.lastPredictedSlaVal = currentEnv.predictions['decision_tree'] || 0.0;
+    
     const grid = document.getElementById('metricsComparison');
     grid.innerHTML = '';
     
@@ -836,7 +847,148 @@ document.getElementById('codeInput').addEventListener('keydown', function(e) {
         executeAndAnalyze();
     }
 });
+
+function showSlaModal() {
+    const modal = document.getElementById('slaModal');
+    modal.style.display = 'flex';
+    
+    const slaTarget = parseFloat(document.getElementById('slaTargetInput').value) || 15.0;
+    const predictedTime = window.lastPredictedSlaVal || 0.0;
+    
+    document.getElementById('modalPredictedRuntime').textContent = predictedTime.toFixed(2);
+    document.getElementById('modalTargetSla').textContent = slaTarget.toFixed(2);
+    
+    // Reset state
+    const slaNode = document.getElementById('slaNode');
+    const slaIcon = document.getElementById('slaIcon');
+    const deployNode = document.getElementById('deployNode');
+    const statusContainer = document.getElementById('slaStatusContainer');
+    
+    slaNode.style.borderColor = '#ed8936';
+    slaNode.style.boxShadow = '0 6px 12px rgba(237,137,54,0.15)';
+    slaNode.querySelector('div:nth-child(2)').style.color = '#ed8936';
+    slaIcon.textContent = '⚙';
+    slaIcon.style.color = '#ed8936';
+    
+    deployNode.style.borderColor = '#a0aec0';
+    deployNode.style.borderStyle = 'dashed';
+    deployNode.querySelector('div:nth-child(2)').style.color = '#a0aec0';
+    deployNode.querySelector('div:nth-child(1)').textContent = '⏳';
+    deployNode.querySelector('div:nth-child(1)').style.color = '#a0aec0';
+    deployNode.querySelector('div:nth-child(3)').textContent = 'Pending';
+    
+    statusContainer.style.background = '#ebf8ff';
+    statusContainer.style.color = '#2b6cb0';
+    statusContainer.style.borderColor = '#bee3f8';
+    statusContainer.textContent = 'Evaluating AI Predictions against System Requirements...';
+
+    setTimeout(() => {
+        let metSla = predictedTime <= slaTarget;
+        
+        if(metSla) {
+            slaNode.style.borderColor = '#48bb78';
+            slaNode.style.boxShadow = '0 6px 12px rgba(72,187,120,0.15)';
+            slaNode.querySelector('div:nth-child(2)').style.color = '#48bb78';
+            slaIcon.textContent = '✓';
+            slaIcon.style.color = '#48bb78';
+            
+            statusContainer.style.background = '#f0fff4';
+            statusContainer.style.color = '#22543d';
+            statusContainer.style.borderColor = '#c6f6d5';
+            statusContainer.innerHTML = '<strong>SLA Approved!</strong> Runtime is within acceptable limits. Proceeding to deployment...';
+            
+            setTimeout(() => {
+                deployNode.style.borderColor = '#48bb78';
+                deployNode.style.borderStyle = 'solid';
+                deployNode.querySelector('div:nth-child(2)').style.color = '#48bb78';
+                deployNode.querySelector('div:nth-child(1)').textContent = '🚀';
+                deployNode.querySelector('div:nth-child(1)').style.color = '#48bb78';
+                deployNode.querySelector('div:nth-child(3)').textContent = 'Deployed';
+                
+                statusContainer.innerHTML = '<strong>Successfully Deployed!</strong> The pipeline completed all stages.';
+            }, 1000);
+            
+        } else {
+            slaNode.style.borderColor = '#e53e3e';
+            slaNode.style.boxShadow = '0 6px 12px rgba(229,62,62,0.15)';
+            slaNode.querySelector('div:nth-child(2)').style.color = '#e53e3e';
+            slaIcon.textContent = '✕';
+            slaIcon.style.color = '#e53e3e';
+            
+            statusContainer.style.background = '#fff5f5';
+            statusContainer.style.color = '#c53030';
+            statusContainer.style.borderColor = '#fed7d7';
+            statusContainer.innerHTML = '<strong>SLA Violation!</strong> Predicted runtime exceeds target SLA. Deployment aborted.';
+            
+            deployNode.style.borderColor = '#e53e3e';
+            deployNode.style.borderStyle = 'dashed';
+            deployNode.querySelector('div:nth-child(2)').style.color = '#e53e3e';
+            deployNode.querySelector('div:nth-child(1)').textContent = '🛑';
+            deployNode.querySelector('div:nth-child(1)').style.color = '#e53e3e';
+            deployNode.querySelector('div:nth-child(3)').textContent = 'Aborted';
+        }
+    }, 1500);
+}
+
+function hideSlaModal() {
+    document.getElementById('slaModal').style.display = 'none';
+}
 </script>
+
+<!-- SLA and CI/CD Modal -->
+<div id="slaModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(4px);">
+    <div style="background: white; padding: 2.5rem; border-radius: 12px; width: 90%; max-width: 800px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h2 style="font-size: 1.5rem; font-weight: 600; color: #2d3748;">CI/CD Pipeline Validation</h2>
+            <button onclick="hideSlaModal()" style="background: none; border: none; font-size: 2rem; cursor: pointer; color: #718096; line-height: 1;">&times;</button>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; position: relative; margin-top: 3rem;">
+            <div style="position: absolute; top: 50%; left: 10%; right: 10%; height: 6px; background: #e2e8f0; z-index: 1; transform: translateY(-50%); border-radius: 3px;"></div>
+            
+            <div class="pipeline-node" style="position: relative; z-index: 2; background: white; padding: 1rem; border: 3px solid #48bb78; border-radius: 10px; text-align: center; width: 20%;">
+                <div style="font-size: 1.5rem; margin-bottom: 0.5rem; color: #48bb78;">✓</div>
+                <div style="font-weight: 600; color: #48bb78;">Build</div>
+                <div style="font-size: 0.75rem; color: #718096; margin-top: 0.25rem;">Success</div>
+            </div>
+            
+            <div class="pipeline-node" style="position: relative; z-index: 2; background: white; padding: 1rem; border: 3px solid #48bb78; border-radius: 10px; text-align: center; width: 20%;">
+                <div style="font-size: 1.5rem; margin-bottom: 0.5rem; color: #48bb78;">✓</div>
+                <div style="font-weight: 600; color: #48bb78;">Test</div>
+                <div style="font-size: 0.75rem; color: #718096; margin-top: 0.25rem;">Unit Passed</div>
+            </div>
+            
+            <div id="slaNode" class="pipeline-node" style="position: relative; z-index: 2; background: white; padding: 1rem; border: 3px solid #ed8936; border-radius: 10px; text-align: center; width: 22%; transform: scale(1.05);">
+                <div id="slaIcon" style="font-size: 1.5rem; margin-bottom: 0.5rem; color: #ed8936;">⚙</div>
+                <div style="font-weight: 600; color: #ed8936;">SLA Check</div>
+                <div style="font-size: 0.75rem; color: #718096; margin-top: 0.25rem;">AI Evaluation</div>
+            </div>
+            
+            <div id="deployNode" class="pipeline-node" style="position: relative; z-index: 2; background: white; padding: 1rem; border: 3px dashed #a0aec0; border-radius: 10px; text-align: center; width: 20%;">
+                <div style="font-size: 1.5rem; margin-bottom: 0.5rem; color: #a0aec0;">⏳</div>
+                <div style="font-weight: 600; color: #a0aec0;">Deploy</div>
+                <div style="font-size: 0.75rem; color: #718096; margin-top: 0.25rem;">Pending</div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 3rem; background: #f8fafc; padding: 1.5rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                <div>
+                    <span style="color: #718096; font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Predicted Runtime</span>
+                    <strong style="font-size: 1.25rem; color: #2d3748;"><span id="modalPredictedRuntime">0.0</span>s</strong>
+                </div>
+                <div>
+                    <span style="color: #718096; font-size: 0.875rem; display: block; margin-bottom: 0.25rem;">Target SLA limit</span>
+                    <strong style="font-size: 1.25rem; color: #2d3748;"><span id="modalTargetSla">15.0</span>s</strong>
+                </div>
+            </div>
+            
+            <div id="slaStatusContainer" style="margin-top: 1rem; padding: 1rem; background: #ebf8ff; color: #2b6cb0; border-radius: 6px; border: 1px solid #bee3f8; text-align: center; font-weight: 500; transition: all 0.3s ease;">
+                Evaluating AI Predictions against System Requirements...
+            </div>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>

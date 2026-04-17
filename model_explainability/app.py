@@ -444,6 +444,7 @@ def create_ml_features_from_execution(execution_metrics, system_specs, productio
     }
     
     return features
+def analyze_code_metrics(code):
     """Analyze code and extract metrics for ML model prediction"""
     try:
         # Parse the code into AST
